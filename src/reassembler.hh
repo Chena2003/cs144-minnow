@@ -1,13 +1,15 @@
 #pragma once
 
 #include "byte_stream.hh"
-#include <map>
+#include <cstdint>
+#include <deque>
 
 class Reassembler
 {
 public:
   // Construct Reassembler to write into given ByteStream.
-  explicit Reassembler( ByteStream&& output ) : output_( std::move( output ) ), map_ {}, is_last_ { false } {}
+  explicit Reassembler( ByteStream&& output ) :
+   output_( std::move( output ) ), buffer_ {}, is_last_ { false } {}
 
   /*
    * Insert a new substring to be reassembled into a ByteStream.
@@ -43,12 +45,22 @@ public:
 
 private:
   ByteStream output_; // the Reassembler writes to this ByteStream
-  std::map<uint64_t, std::string> map_;
+
+  struct Chunk {
+    uint64_t start;
+    std::string data;
+    uint64_t end;
+
+    Chunk(uint64_t start_, std::string data_) : 
+      start(start_), data(data_), end(start_ + data_.size()) {};
+  };
+
+  std::deque<Chunk> buffer_;
   bool is_last_;
 
   // 合并有重叠的区间
-  void merge_data();
+  void try_merge(Chunk&& new_chunk);
 
-  // 关闭写者
+  // 关闭写
   void close_writer();
 };
