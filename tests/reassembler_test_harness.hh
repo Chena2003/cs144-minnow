@@ -8,6 +8,11 @@
 #include <sstream>
 #include <utility>
 
+/* C++20 Concepts 约束参数类型 T 必须是 TestStep<ByteStream>的派生类
+** 等价于下面写法
+** tmeplate <typename T>
+** requires std::derived_from<T, TestStep<ByteStream>>
+*/
 template<std::derived_from<TestStep<ByteStream>> T>
 struct ReassemblerTestStep : public TestStep<Reassembler>
 {

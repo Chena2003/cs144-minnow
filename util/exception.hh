@@ -59,6 +59,7 @@ inline std::shared_ptr<T> notnull( const std::string_view context, std::shared_p
   return x ? x : throw std::runtime_error( std::string( context ) + ": returned null pointer" );
 }
 
+// 实现C++符号名称的解码，将编译器生成的修饰名称（Mangled Name）转换为人类可读的原始名称。
 inline std::string demangle( const char* name )
 {
   int status {};

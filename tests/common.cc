@@ -28,10 +28,11 @@ string Printer::prettify( string_view str, size_t max_length )
   ostringstream ss;
   const string_view str_prefix = str.substr( 0, max_length );
   for ( const uint8_t ch : str_prefix ) {
-    if ( isprint( ch ) ) {
+    if ( isprint( ch ) ) { // isprint检查字符是否可打印
       ss << ch;
     } else {
-      ss << "\\x" << fixed << setw( 2 ) << setfill( '0' ) << hex << static_cast<size_t>( ch );
+      ss << "\\x" << fixed << setw( 2 ) << setfill( '0' ) << hex
+         << static_cast<size_t>( ch ); // 不可打印字符，转换成\xHH格式输出
     }
   }
   if ( str.size() > str_prefix.size() ) {
