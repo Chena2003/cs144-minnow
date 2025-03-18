@@ -5,35 +5,36 @@
 
 using namespace std;
 
-void Reassembler::try_merge(Chunk&& new_chunk) {
+void Reassembler::try_merge( Chunk&& new_chunk )
+{
   auto it = buffer_.begin();
-  while(it != buffer_.end()) {
+  while ( it != buffer_.end() ) {
     uint64_t start_ = it->start;
     uint64_t end_ = it->end;
 
-    if (new_chunk.end < start_) {
-        break;
-    } else if (end_ >= new_chunk.start) {
-        // 合并重叠块
-        if(new_chunk.start > start_) {
-          new_chunk.data = it->data.substr(0, new_chunk.start - start_) + new_chunk.data;
-          new_chunk.start = it->start;
-        }
+    if ( new_chunk.end < start_ ) {
+      break;
+    } else if ( end_ >= new_chunk.start ) {
+      // 合并重叠块
+      if ( new_chunk.start > start_ ) {
+        new_chunk.data = it->data.substr( 0, new_chunk.start - start_ ) + new_chunk.data;
+        new_chunk.start = it->start;
+      }
 
-        if (end_ > new_chunk.end) {
-            new_chunk.data += it->data.substr(new_chunk.end - start_);
-            new_chunk.end = end_;
-        }
-        it = buffer_.erase(it);
+      if ( end_ > new_chunk.end ) {
+        new_chunk.data += it->data.substr( new_chunk.end - start_ );
+        new_chunk.end = end_;
+      }
+      it = buffer_.erase( it );
     } else {
-        ++it;
+      ++it;
     }
   }
 
   // 插入到正确位置（保持有序）
-  auto pos = lower_bound(buffer_.begin(), buffer_.end(), new_chunk.start,
-                        [](const Chunk& c, uint64_t s) { return c.start < s; });
-  buffer_.insert(pos, move(new_chunk));
+  auto pos = lower_bound(
+    buffer_.begin(), buffer_.end(), new_chunk.start, []( const Chunk& c, uint64_t s ) { return c.start < s; } );
+  buffer_.insert( pos, move( new_chunk ) );
 }
 
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
@@ -57,11 +58,11 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   }
 
   // 处理输入数据
-  const uint64_t start = max(first_index, curr_index);
-  const uint64_t end = min(data_end, max_end);
-  if (start >= end) {
-      close_writer();
-      return;
+  const uint64_t start = max( first_index, curr_index );
+  const uint64_t end = min( data_end, max_end );
+  if ( start >= end ) {
+    close_writer();
+    return;
   }
 
   auto length = end - start;
@@ -70,7 +71,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   data = data.substr( offset, length );
   first_index = start;
 
-  try_merge(Chunk(first_index, std::move(data)));
+  try_merge( Chunk( first_index, std::move( data ) ) );
 
   // 处理输出
   for ( auto it = buffer_.begin(); it != buffer_.end(); ) {
@@ -96,9 +97,10 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
   close_writer();
 }
 
-uint64_t Reassembler::bytes_pending() const {
-    return accumulate(buffer_.begin(), buffer_.end(), 0ull,
-                      [](uint64_t sum, const Chunk& c) { return sum + c.data.size(); });
+uint64_t Reassembler::bytes_pending() const
+{
+  return accumulate(
+    buffer_.begin(), buffer_.end(), 0ull, []( uint64_t sum, const Chunk& c ) { return sum + c.data.size(); } );
 }
 
 void Reassembler::close_writer()
