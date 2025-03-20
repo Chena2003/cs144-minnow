@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <functional>
 #include <list>
+#include <map>
 #include <memory>
 #include <optional>
 #include <queue>
@@ -15,8 +16,17 @@ class TCPSender
 {
 public:
   /* Construct TCP sender with given default Retransmission Timeout and possible ISN */
-  TCPSender( ByteStream&& input, Wrap32 isn, uint64_t initial_RTO_ms )
-    : input_( std::move( input ) ), isn_( isn ), initial_RTO_ms_( initial_RTO_ms )
+  TCPSender( ByteStream&& input, Wrap32 isn, uint64_t initial_RTO_ms ) :
+    input_( std::move( input ) ),
+    isn_( isn ),
+    initial_RTO_ms_( initial_RTO_ms ),
+    outstanding_segments_seq(),
+    outstanding_segments_time(),
+    consecutive_retransmission_cnts_( 0 ),
+    windows_size_( 1 ),
+    is_syn( true ),
+    data_(),
+    base_rto_ms_( initial_RTO_ms )
   {}
 
   /* Generate an empty TCPSenderMessage */
@@ -48,4 +58,15 @@ private:
   ByteStream input_;
   Wrap32 isn_;
   uint64_t initial_RTO_ms_;
+  std::map<Wrap32, std::shared_ptr<TCPSenderMessage>> outstanding_segments_seq;
+  std::map<uint64_t, std::shared_ptr<TCPSenderMessage>> outstanding_segments_time;
+  uint64_t consecutive_retransmission_cnts_;
+  uint64_t windows_size_;
+  bool is_syn;
+  std::string data_;
+  uint64_t rto_ms_ {};
+  uint64_t base_rto_ms_;
+  uint64_t no_ {};
+  // get_data
+  std::string get_data_( uint64_t num );
 };
