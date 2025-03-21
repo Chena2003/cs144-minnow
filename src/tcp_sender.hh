@@ -16,17 +16,12 @@ class TCPSender
 {
 public:
   /* Construct TCP sender with given default Retransmission Timeout and possible ISN */
-  TCPSender( ByteStream&& input, Wrap32 isn, uint64_t initial_RTO_ms ) :
-    input_( std::move( input ) ),
-    isn_( isn ),
-    initial_RTO_ms_( initial_RTO_ms ),
-    outstanding_segments_seq(),
-    outstanding_segments_time(),
-    consecutive_retransmission_cnts_( 0 ),
-    windows_size_( 1 ),
-    is_syn( true ),
-    data_(),
-    base_rto_ms_( initial_RTO_ms )
+  TCPSender( ByteStream&& input, Wrap32 isn, uint64_t initial_RTO_ms )
+    : input_( std::move( input ) )
+    , isn_( isn )
+    , initial_RTO_ms_( initial_RTO_ms )
+    , zero_point_( isn )
+    , base_rto_ms_( initial_RTO_ms )
   {}
 
   /* Generate an empty TCPSenderMessage */
@@ -58,15 +53,23 @@ private:
   ByteStream input_;
   Wrap32 isn_;
   uint64_t initial_RTO_ms_;
-  std::map<Wrap32, std::shared_ptr<TCPSenderMessage>> outstanding_segments_seq;
-  std::map<uint64_t, std::shared_ptr<TCPSenderMessage>> outstanding_segments_time;
-  uint64_t consecutive_retransmission_cnts_;
-  uint64_t windows_size_;
-  bool is_syn;
-  std::string data_;
-  uint64_t rto_ms_ {};
-  uint64_t base_rto_ms_;
-  uint64_t no_ {};
+  std::map<uint64_t, std::shared_ptr<TCPSenderMessage>> outstanding_segments_time {};
+  Wrap32 zero_point_;                           // 存储偏移量
+  std::string data_ {};                         // 存储多取出来的数据
+  uint64_t consecutive_retransmission_cnts_ {}; // 连续重发数据段数
+  uint64_t window_size_ {};                     // 窗口大小
+  uint64_t receive_window_size_ {};             // 收到窗口大小
+  uint64_t rto_ms_ {};                          // 当前 rts 时间
+  uint64_t base_rto_ms_ {};                     // rts 的倍数
+  uint64_t no_ {};                              // 发送数据段顺序
+  uint64_t total_ack_no_ {};                    // 确认数据总数，作为ack_no unwrap的checkpoint
+  uint64_t total_isn_no_ {};                    // 发送数据总数，作为isn_no unwrap的checkpoint
+
+  bool is_syn { true };               // syn 标志，初始为真
+  bool is_fin { false };              // fin 标志，初始为假
+  bool is_zero_window_size { false }; // 窗口为0标志
+  bool no_ack { true };               // 还未收到应答帧
+
   // get_data
   std::string get_data_( uint64_t num );
 };
